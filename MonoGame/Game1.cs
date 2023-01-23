@@ -11,6 +11,8 @@ namespace MonoGame
     // The main Game1 class inherits from the Game class, which provides all the core methods for your game (ie. Load/Unload Content, Update, Draw etc.). You usually only have one Game class per game, so its name is not that important.
     public class Game1 : Game
     {
+        Spaceship spaceship;
+
         // The two default variables that the blank template starts with are the GraphicsDeviceManager and SpriteBatch. Both of these variables that are used for drawing to the screen.
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
@@ -22,6 +24,8 @@ namespace MonoGame
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+
+            spaceship = new(_graphics);
         }
 
         // The Initialize method - to initialize the game upon its startup.
@@ -29,6 +33,7 @@ namespace MonoGame
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
+            spaceship.Initialize();
 
             base.Initialize();
         }
@@ -40,6 +45,14 @@ namespace MonoGame
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
+
+            // GraphicsDevice bestaat niet in Class?
+            // Content.Load werkt niet in class
+            // spaceship.LoadContent();
+            
+            spaceship._spriteBatch = _spriteBatch;
+            spaceship.shipTexture = Content.Load<Texture2D>("Spaceship");
+
         }
 
         // The Update method - which is called on a regular interval to update your game state, e.g. take player inputs, move ships, or animate entities.
@@ -50,6 +63,7 @@ namespace MonoGame
                 Exit();
 
             // TODO: Add your update logic here
+            spaceship.UpdateMovement(gameTime);
 
             base.Update(gameTime);
         }
@@ -58,9 +72,15 @@ namespace MonoGame
         // Similar to the Update method, the Draw method is also called multiple times per second. This, as the name suggests, is responsible for drawing content to the screen.
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            Color background = new Color(4, 21, 28);
+            GraphicsDevice.Clear(background);
 
             // TODO: Add your drawing code here
+            _spriteBatch.Begin();
+
+            spaceship.Draw();
+
+            _spriteBatch.End();
 
             base.Draw(gameTime);
         }
