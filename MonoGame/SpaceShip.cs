@@ -69,6 +69,7 @@ namespace MonoGame
                 shipAngle -= shipTurnSpeed * speedMultiplier;
             }
 
+
             float heighestSize = (shipTexture.Height > shipTexture.Width) ? shipTexture.Height : shipTexture.Width;
             float halfSize = heighestSize / 2;
 
@@ -77,7 +78,6 @@ namespace MonoGame
 
             shipPosition.X = shipPositionX;
             shipPosition.Y = shipPositionY;
-
 
             shipPosition.X = (shipPosition.X > maxSizeWidth) ? maxSizeWidth : (shipPosition.X < halfSize) ? halfSize : shipPositionX;
             shipPosition.Y = (shipPosition.Y > maxSizeHeight) ? maxSizeHeight : (shipPosition.Y < halfSize) ? halfSize : shipPositionY;
