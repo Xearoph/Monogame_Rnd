@@ -4,6 +4,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MonoGame
 {
@@ -11,7 +13,7 @@ namespace MonoGame
     // The main Game1 class inherits from the Game class, which provides all the core methods for your game (ie. Load/Unload Content, Update, Draw etc.). You usually only have one Game class per game, so its name is not that important.
     public class Game1 : Game
     {
-        Spaceship spaceship;
+        List<Spaceship> spaceship = new();
 
         // The two default variables that the blank template starts with are the GraphicsDeviceManager and SpriteBatch. Both of these variables that are used for drawing to the screen.
         private GraphicsDeviceManager _graphics;
@@ -21,11 +23,15 @@ namespace MonoGame
         // The main game constructor is used to initialize the starting variables. In this case, a new GraphicsDeviceManager is created, and the root directory containing the game's content files is set.
         public Game1()
         {
-            _graphics = new GraphicsDeviceManager(this);
+            _graphics = new GraphicsDeviceManager(this)
+            {
+                PreferredBackBufferWidth = 1280,
+                PreferredBackBufferHeight = 720
+            };
+
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
 
-            spaceship = new(_graphics);
         }
 
         // The Initialize method - to initialize the game upon its startup.
@@ -33,9 +39,16 @@ namespace MonoGame
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            spaceship.Initialize();
-
+            AddPlayers(2);
             base.Initialize();
+        }
+
+        void AddPlayers(int pNumberOfPlayers)
+        {
+            for (int i = 0; i < pNumberOfPlayers; i++)
+            {
+                spaceship.Add(new Spaceship(_graphics.GraphicsDevice.Viewport, i));
+            }
         }
 
         // The Load and Unload Content methods - which are used to add and remove assets from the running game from the Content project.
@@ -45,25 +58,23 @@ namespace MonoGame
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-
-            // GraphicsDevice bestaat niet in Class?
-            // Content.Load werkt niet in class
-            // spaceship.LoadContent();
+            spaceship.ForEach(s => s.LoadContent(Content));
             
-            spaceship._spriteBatch = _spriteBatch;
-            spaceship.shipTexture = Content.Load<Texture2D>("Spaceship");
-
         }
 
         // The Update method - which is called on a regular interval to update your game state, e.g. take player inputs, move ships, or animate entities.
         // The Update method is called multiple times per second, and it is used to update your game state (checking for collisions, gathering input, playing audio, etc.).
+        int i = 0;
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
             // TODO: Add your update logic here
-            spaceship.UpdateMovement(gameTime);
+            spaceship.ForEach(s => s.UpdateMovement(gameTime));
+
+            if (spaceship[0].CollisionCheck().IntersectsWith(spaceship[1].CollisionCheck()))
+                spaceship[1].ToggleDeath();
 
             base.Update(gameTime);
         }
@@ -72,13 +83,13 @@ namespace MonoGame
         // Similar to the Update method, the Draw method is also called multiple times per second. This, as the name suggests, is responsible for drawing content to the screen.
         protected override void Draw(GameTime gameTime)
         {
-            Color background = new Color(4, 21, 28);
+            Color background = new(4, 21, 28);
             GraphicsDevice.Clear(background);
 
             // TODO: Add your drawing code here
             _spriteBatch.Begin();
 
-            spaceship.Draw();
+            spaceship.ForEach(s => s.Draw(_spriteBatch));
 
             _spriteBatch.End();
 

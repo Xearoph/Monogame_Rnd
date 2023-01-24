@@ -1,39 +1,75 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Content;
+using System;
+
+using RectangleF = System.Drawing.RectangleF;
 
 namespace MonoGame
 {
     internal class Spaceship
     {
-        // Custom variables
-        public Texture2D shipTexture;
+        RectangleF collisionRectangle;
+        public Vector2 shipPosition;
+        
+        Texture2D shipTexture;
 
-        Vector2 shipPosition;
-        float shipSpeed;
-        float shipTurnSpeed;
-        float shipAngle;
+        readonly float shipSpeed = 500f;
+        readonly float shipTurnSpeed = 12f;
+        float shipAngle = 0;
+        float angleOffset = (float)(Math.PI / 180);
 
-        GraphicsDeviceManager _graphics;
+        bool isDeath = false;
 
-        public SpriteBatch _spriteBatch;
+        Vector2 viewportSize;
 
-        public Spaceship(GraphicsDeviceManager _graphics)
+        Keys[] controls;
+
+        float halfSize;
+        Vector2 maxViewportSize;
+
+        public Spaceship(Viewport pViewport, int id)
         {
-            this._graphics = _graphics;
+            viewportSize = new Vector2(pViewport.Width, pViewport.Height);
+
+            switch (id)
+            {
+                case 0:
+                    controls = new Keys[] { Keys.W, Keys.S, Keys.D, Keys.A };
+                    shipPosition = new Vector2(viewportSize.X * 0.1f, viewportSize.Y / 2);
+                    break;
+                case 1:
+                    controls = new Keys[] { Keys.Up, Keys.Down, Keys.Right, Keys.Left };
+                    shipPosition = new Vector2(viewportSize.X * 0.9f, viewportSize.Y / 2);
+                    shipAngle = angleOffset * 180;
+                    break;
+            }
         }
 
-        public void Initialize()
+        public RectangleF CollisionCheck()
         {
-            shipPosition = new Vector2(_graphics.PreferredBackBufferWidth / 2, _graphics.PreferredBackBufferHeight / 2);
-            shipSpeed = 150f;
-            shipTurnSpeed = 3f;
+            return collisionRectangle;
         }
 
-        public void LoadContent()
+        public void LoadContent(ContentManager pContent)
         {
-            // _spriteBatch = new SpriteBatch(GraphicsDevice); // <- GraphicsDevice werkt niet, mogen er wel meerdere zijn?
-            // shipTexture = Content.Load<Texture2D>("Spaceship"); // <- Content bestaat niet in huidige context
+            
+            shipTexture = pContent.Load<Texture2D>("Spaceship");
+            CalculateSizes();
+        }
+
+        void CalculateSizes()
+        {
+            halfSize = (shipTexture.Height > shipTexture.Width) ? shipTexture.Height / 2 : shipTexture.Width / 2;
+            maxViewportSize = new(viewportSize.X - halfSize, viewportSize.Y - halfSize);
+            collisionRectangle = new RectangleF(shipPosition.X, shipPosition.Y, shipTexture.Width, shipTexture.Height);
+            collisionRectangle.Inflate(-3,-3);
+        }
+
+        public void ToggleDeath()
+        {
+            isDeath = true;
         }
 
         public void UpdateMovement(GameTime _gameTime)
@@ -41,51 +77,50 @@ namespace MonoGame
             float shipPositionX = shipPosition.X;
             float shipPositionY = shipPosition.Y;
 
-            Matrix rotMatrixZ = Matrix.CreateRotationZ(shipAngle);
-
             KeyboardState kState = Keyboard.GetState();
 
             float speedMultiplier = (float)_gameTime.ElapsedGameTime.TotalSeconds;
 
-            if (kState.IsKeyDown(Keys.W))
+            float shipXCosSpeed = (float)Math.Cos(shipAngle) * shipSpeed * speedMultiplier;
+            float shipYSinSpeed = (float)Math.Sin(shipAngle) * shipSpeed * speedMultiplier;
+
+            float shipTurnSpeedMultiplied = shipTurnSpeed * speedMultiplier;
+
+            if (kState.IsKeyDown(controls[0]))
             {
-                shipPositionX += rotMatrixZ.M12 * shipSpeed * speedMultiplier;
-                shipPositionY -= rotMatrixZ.M11 * shipSpeed * speedMultiplier;
+                shipPositionX += shipXCosSpeed;
+                shipPositionY += shipYSinSpeed;
             }
 
-            if (kState.IsKeyDown(Keys.S))
+            if (kState.IsKeyDown(controls[1]))
             {
-                shipPositionX -= rotMatrixZ.M12 * shipSpeed * speedMultiplier;
-                shipPositionY += rotMatrixZ.M11 * shipSpeed * speedMultiplier;
+                shipPositionX -= shipXCosSpeed;
+                shipPositionY -= shipYSinSpeed;
             }
 
-            if (kState.IsKeyDown(Keys.D))
-            {
-                shipAngle += shipTurnSpeed * speedMultiplier;
-            }
+            if (kState.IsKeyDown(controls[2]))
+                shipAngle += shipTurnSpeedMultiplied;
 
-            if (kState.IsKeyDown(Keys.A))
-            {
-                shipAngle -= shipTurnSpeed * speedMultiplier;
-            }
+            if (kState.IsKeyDown(controls[3]))
+                shipAngle -= shipTurnSpeedMultiplied;
 
-
-            float heighestSize = (shipTexture.Height > shipTexture.Width) ? shipTexture.Height : shipTexture.Width;
-            float halfSize = heighestSize / 2;
-
-            float maxSizeWidth = _graphics.PreferredBackBufferWidth - halfSize;
-            float maxSizeHeight = _graphics.PreferredBackBufferHeight - halfSize;
-
-            shipPosition.X = shipPositionX;
-            shipPosition.Y = shipPositionY;
-
-            shipPosition.X = (shipPosition.X > maxSizeWidth) ? maxSizeWidth : (shipPosition.X < halfSize) ? halfSize : shipPositionX;
-            shipPosition.Y = (shipPosition.Y > maxSizeHeight) ? maxSizeHeight : (shipPosition.Y < halfSize) ? halfSize : shipPositionY;
+            collisionRectangle.X = shipPosition.X = Math.Clamp(shipPositionX, halfSize, maxViewportSize.X);
+            collisionRectangle.Y = shipPosition.Y = Math.Clamp(shipPositionY, halfSize, maxViewportSize.Y);
         }
 
-        public void Draw()
+        public void Draw(SpriteBatch pSpriteBatch)
         {
-            _spriteBatch.Draw(shipTexture, shipPosition, null, Color.White, shipAngle, new Vector2(shipTexture.Width / 2, shipTexture.Height / 2), Vector2.One, SpriteEffects.None, 0f);
+            if (isDeath) return;
+            pSpriteBatch.Draw(
+                shipTexture, 
+                shipPosition,
+                null,
+                Color.White, 
+                shipAngle + angleOffset * 90, 
+                new Vector2(shipTexture.Width / 2, shipTexture.Height / 2), 
+                Vector2.One, 
+                SpriteEffects.None, 
+                0f);
         }
     }
 }
