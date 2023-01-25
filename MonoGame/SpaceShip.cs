@@ -10,17 +10,20 @@ namespace MonoGame
 {
     internal class Spaceship
     {
-        RectangleF collisionRectangle;
-        public Vector2 shipPosition;
+        int playerId;
         
         Texture2D shipTexture;
+        RectangleF shipCollision;
+        Vector2 shipPosition;
+
+        Texture2D shipWeaponTexture;
+        string shipWeaponTextureName;
 
         readonly float shipSpeed = 500f;
         readonly float shipTurnSpeed = 12f;
         float shipAngle = 0;
         float angleOffset = (float)(Math.PI / 180);
 
-        bool isDeath = false;
 
         Vector2 viewportSize;
 
@@ -29,33 +32,66 @@ namespace MonoGame
         float halfSize;
         Vector2 maxViewportSize;
 
-        public Spaceship(Viewport pViewport, int id)
+        bool tagger;
+        bool isDeath = false;
+
+        public Spaceship(Viewport pViewport, int pPlayerId, bool pTagger = false)
         {
             viewportSize = new Vector2(pViewport.Width, pViewport.Height);
+            playerId = pPlayerId;
+            tagger = pTagger;
 
-            switch (id)
+            switch (playerId)
             {
                 case 0:
                     controls = new Keys[] { Keys.W, Keys.S, Keys.D, Keys.A };
                     shipPosition = new Vector2(viewportSize.X * 0.1f, viewportSize.Y / 2);
+                    shipWeaponTextureName = "WeaponBlue";
                     break;
                 case 1:
                     controls = new Keys[] { Keys.Up, Keys.Down, Keys.Right, Keys.Left };
                     shipPosition = new Vector2(viewportSize.X * 0.9f, viewportSize.Y / 2);
                     shipAngle = angleOffset * 180;
+                    shipWeaponTextureName = "WeaponRed";
+                    break;
+                case 2:
+                    controls = new Keys[] { Keys.I, Keys.K, Keys.L, Keys.J };
+                    shipPosition = new Vector2(viewportSize.X / 2, viewportSize.Y * 0.9f);
+                    shipAngle = angleOffset * -90;
+                    shipWeaponTextureName = "WeaponGreen";
+                    break;
+                case 3:
+                    controls = new Keys[] { Keys.NumPad8, Keys.NumPad5, Keys.NumPad6, Keys.NumPad4 };
+                    shipPosition = new Vector2(viewportSize.X / 2, viewportSize.Y * 0.1f);
+                    shipAngle = angleOffset * 90;
+                    shipWeaponTextureName = "WeaponPink";
+                    break;
+                case 4:
+                    controls = new Keys[] { Keys.Home, Keys.End, Keys.PageDown, Keys.Delete };
+                    shipPosition = new Vector2(viewportSize.X / 2, viewportSize.Y / 2);
+                    shipAngle = angleOffset * 45;
+                    shipWeaponTextureName = "WeaponOrange";
                     break;
             }
         }
 
-        public RectangleF CollisionCheck()
+        public void CollisionCheck(Spaceship other)
         {
-            return collisionRectangle;
+            if (this == other || !tagger) return;
+
+            if (shipCollision.IntersectsWith(other.Collider()))
+                other.ToggleDeath();
+        }
+
+        public RectangleF Collider()
+        {
+            return shipCollision;
         }
 
         public void LoadContent(ContentManager pContent)
         {
-            
             shipTexture = pContent.Load<Texture2D>("Spaceship");
+            shipWeaponTexture = pContent.Load<Texture2D>(shipWeaponTextureName);
             CalculateSizes();
         }
 
@@ -63,8 +99,9 @@ namespace MonoGame
         {
             halfSize = (shipTexture.Height > shipTexture.Width) ? shipTexture.Height / 2 : shipTexture.Width / 2;
             maxViewportSize = new(viewportSize.X - halfSize, viewportSize.Y - halfSize);
-            collisionRectangle = new RectangleF(shipPosition.X, shipPosition.Y, shipTexture.Width, shipTexture.Height);
-            collisionRectangle.Inflate(-3,-3);
+
+            shipCollision = new RectangleF(shipPosition.X, shipPosition.Y, shipTexture.Width, shipTexture.Height);
+            shipCollision.Inflate(-3, -3);
         }
 
         public void ToggleDeath()
@@ -104,22 +141,38 @@ namespace MonoGame
             if (kState.IsKeyDown(controls[3]))
                 shipAngle -= shipTurnSpeedMultiplied;
 
-            collisionRectangle.X = shipPosition.X = Math.Clamp(shipPositionX, halfSize, maxViewportSize.X);
-            collisionRectangle.Y = shipPosition.Y = Math.Clamp(shipPositionY, halfSize, maxViewportSize.Y);
+            shipCollision.X = shipPosition.X = Math.Clamp(shipPositionX, halfSize, maxViewportSize.X);
+            shipCollision.Y = shipPosition.Y = Math.Clamp(shipPositionY, halfSize, maxViewportSize.Y);
         }
 
         public void Draw(SpriteBatch pSpriteBatch)
         {
             if (isDeath) return;
+
+            Vector2 shipTextureOffset = new(shipTexture.Width / 2, shipTexture.Height / 2);
+            Vector2 shipWeaponTextureOffset = new(shipWeaponTexture.Width/2, shipWeaponTexture.Height + shipTexture.Height / 2);
+
             pSpriteBatch.Draw(
-                shipTexture, 
+                shipTexture,
                 shipPosition,
                 null,
-                Color.White, 
-                shipAngle + angleOffset * 90, 
-                new Vector2(shipTexture.Width / 2, shipTexture.Height / 2), 
-                Vector2.One, 
-                SpriteEffects.None, 
+                Color.White,
+                shipAngle + angleOffset * 90,
+                shipTextureOffset,
+                Vector2.One,
+                SpriteEffects.None,
+                0f);
+
+            if (!tagger) return;
+            pSpriteBatch.Draw(
+                shipWeaponTexture,
+                shipPosition,
+                null,
+                Color.White,
+                shipAngle + angleOffset * 90,
+                shipWeaponTextureOffset,
+                Vector2.One,
+                SpriteEffects.None,
                 0f);
         }
     }
