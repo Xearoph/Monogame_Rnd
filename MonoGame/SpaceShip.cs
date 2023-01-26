@@ -11,7 +11,7 @@ namespace MonoGame
     internal class Spaceship
     {
         int playerId;
-        
+
         Texture2D shipTexture;
         RectangleF shipCollision;
         Vector2 shipPosition;
@@ -104,10 +104,9 @@ namespace MonoGame
             shipCollision.Inflate(-3, -3);
         }
 
-        public void ToggleDeath()
-        {
-            isDeath = true;
-        }
+        public void ToggleDeath() { isDeath = true; }
+
+        public bool IsDeath() { return isDeath; }
 
         public void UpdateMovement(GameTime _gameTime)
         {
@@ -145,12 +144,18 @@ namespace MonoGame
             shipCollision.Y = shipPosition.Y = Math.Clamp(shipPositionY, halfSize, maxViewportSize.Y);
         }
 
+
+
         public void Draw(SpriteBatch pSpriteBatch)
         {
-            if (isDeath) return;
+            if (IsDeath()) return;
 
             Vector2 shipTextureOffset = new(shipTexture.Width / 2, shipTexture.Height / 2);
-            Vector2 shipWeaponTextureOffset = new(shipWeaponTexture.Width/2, shipWeaponTexture.Height + shipTexture.Height / 2);
+            Vector2 shipWeaponTextureOffset = new(shipWeaponTexture.Width / 2, shipWeaponTexture.Height + shipTexture.Height / 2);
+
+            //Rectangle bok = new((int)shipPosition.X - shipTexture.Bounds.Width / 2, (int)shipPosition.Y - shipTexture.Bounds.Height / 2, 
+            //    shipTexture.Bounds.Width, shipTexture.Bounds.Height);
+            //pSpriteBatch.Draw(Game1.pixel, bok, Color.White);
 
             pSpriteBatch.Draw(
                 shipTexture,

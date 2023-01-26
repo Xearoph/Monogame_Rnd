@@ -32,8 +32,13 @@ namespace MonoGame
             base.Initialize();
         }
 
+        public static Texture2D pixel;
         protected override void LoadContent()
         {
+            pixel = new(GraphicsDevice, 1, 1);
+            Color[] pixelData = new Color[1] { new Color(255, 0, 0, 80) };
+            pixel.SetData(pixelData);
+
             _spriteBatch = new SpriteBatch(GraphicsDevice);
         }
 
@@ -43,6 +48,9 @@ namespace MonoGame
                 Exit();
 
             gameManager.Update(gameTime);
+
+            // Reset game if there are no players
+            if (gameManager.ResetGame()) gameManager = new(_graphics.GraphicsDevice.Viewport, Content);
 
             base.Update(gameTime);
         }
