@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Content;
 using System;
 
 using RectangleF = System.Drawing.RectangleF;
+using System.Diagnostics;
 
 namespace MonoGame
 {
@@ -13,7 +14,7 @@ namespace MonoGame
         int playerId;
 
         Texture2D shipTexture;
-        RectangleF shipCollision;
+        Rectangle shipCollision;
         Vector2 shipPosition;
 
         Texture2D shipWeaponTexture;
@@ -79,11 +80,11 @@ namespace MonoGame
         {
             if (this == other || !tagger) return;
 
-            if (shipCollision.IntersectsWith(other.Collider()))
+            if (shipCollision.Intersects(other.Collider()))
                 other.ToggleDeath();
         }
 
-        public RectangleF Collider()
+        public Rectangle Collider()
         {
             return shipCollision;
         }
@@ -100,8 +101,7 @@ namespace MonoGame
             halfSize = (shipTexture.Height > shipTexture.Width) ? shipTexture.Height / 2 : shipTexture.Width / 2;
             maxViewportSize = new(viewportSize.X - halfSize, viewportSize.Y - halfSize);
 
-            shipCollision = new RectangleF(shipPosition.X, shipPosition.Y, shipTexture.Width, shipTexture.Height);
-            shipCollision.Inflate(-3, -3);
+            
         }
 
         public void ToggleDeath() { isDeath = true; }
@@ -140,8 +140,8 @@ namespace MonoGame
             if (kState.IsKeyDown(controls[3]))
                 shipAngle -= shipTurnSpeedMultiplied;
 
-            shipCollision.X = shipPosition.X = Math.Clamp(shipPositionX, halfSize, maxViewportSize.X);
-            shipCollision.Y = shipPosition.Y = Math.Clamp(shipPositionY, halfSize, maxViewportSize.Y);
+            shipPosition.X = Math.Clamp(shipPositionX, halfSize, maxViewportSize.X);
+            shipPosition.Y = Math.Clamp(shipPositionY, halfSize, maxViewportSize.Y);
         }
 
 
@@ -153,9 +153,13 @@ namespace MonoGame
             Vector2 shipTextureOffset = new(shipTexture.Width / 2, shipTexture.Height / 2);
             Vector2 shipWeaponTextureOffset = new(shipWeaponTexture.Width / 2, shipWeaponTexture.Height + shipTexture.Height / 2);
 
-            //Rectangle bok = new((int)shipPosition.X - shipTexture.Bounds.Width / 2, (int)shipPosition.Y - shipTexture.Bounds.Height / 2, 
-            //    shipTexture.Bounds.Width, shipTexture.Bounds.Height);
-            //pSpriteBatch.Draw(Game1.pixel, bok, Color.White);
+            shipCollision = new Rectangle(
+                (int)shipPosition.X - shipTexture.Bounds.Width / 2, 
+                (int)shipPosition.Y - shipTexture.Bounds.Height / 2,
+               shipTexture.Bounds.Width, 
+               shipTexture.Bounds.Height);
+
+            shipCollision.Inflate(-3, -3);
 
             pSpriteBatch.Draw(
                 shipTexture,
@@ -167,6 +171,10 @@ namespace MonoGame
                 Vector2.One,
                 SpriteEffects.None,
                 0f);
+
+            /*pSpriteBatch.Draw(Game1.pixel, 
+                shipCollision, 
+                Color.White);*/
 
             if (!tagger) return;
             pSpriteBatch.Draw(

@@ -52,6 +52,8 @@ namespace MonoGame
         {
             // Loop through all players for movement and collision checks
             players.ForEach(s => s.UpdateMovement(pGameTime));
+
+
             players.ForEach(a => players.ForEach(b => a.CollisionCheck(b)));
 
             for (int i = 0; i < players.Count; i++)
